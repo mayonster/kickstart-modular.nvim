@@ -28,19 +28,39 @@ return {
         MAGENTA = '#ff2e97', -- Deep magenta
         BLUE = '#0098df', -- Light-medium blue
         RED = '#ff3344', -- Strong red
-        SEAFOAM = '#0b8146', -- Deeper Green
+        GITADD = '#0b8146', -- Deeper Green
+        GITCHANGE = '#dbcd00',
+        GITDELETE = '#c6182c',
+        PURPLE = '#c832ff',
+        PINK = '#fb32ff',
       }
+
+      local seperator_color = colors.FG
+
+      local cursor_place_color = colors.MAGENTA
+
+      local left_icon_1 =  { '⚛', colors.YELLOW }
+      local left_icon_2 =  { '⌀', colors.CYAN    }
+      local left_icon_3 =  { '𖤐', colors.RED     }
+      local left_icon_4 =  { '∿', colors.PURPLE    }
+      local left_icon_5 =  { '♥', colors.PURPLE }
+
+      local right_icon_5 =  { '⚛', colors.YELLOW }
+      local right_icon_4 =  { '⌀', colors.CYAN    }
+      local right_icon_3 =  { '𖤐', colors.RED     }
+      local right_icon_2 =  { '∿', colors.PURPLE    }
+      local right_icon_1 =  { '♥', colors.PURPLE }
 
       -- Function to get the color associated with the current mode in Vim
       local function get_mode_color()
         -- Define a table mapping modes to their associated colors
         local mode_color = {
-          n = colors.BLUE,
-          i = colors.VIOLET,
-          v = colors.RED,
+          n = colors.VIOLET,
+          i = colors.CYAN,
+          v = colors.PURPLE,
           [''] = colors.BLUE,
-          V = colors.RED,
-          c = colors.MAGENTA,
+          V = colors.PURPLE,
+          c = colors.RED,
           no = colors.RED,
           s = colors.ORANGE,
           S = colors.ORANGE,
@@ -58,85 +78,6 @@ return {
         }
         -- Return the opposite color, or fallback to foreground color
         return mode_color[vim.fn.mode()]
-      end
-
-      -- Function to get the opposite color of a given mode color
-      local function get_opposite_color(mode_color)
-        -- Define a table mapping colors to their opposite color
-        local opposite_colors = {
-          [colors.RED] = colors.CYAN,
-          [colors.BLUE] = colors.ORANGE,
-          [colors.GREEN] = colors.MAGENTA,
-          [colors.MAGENTA] = colors.DARKBLUE,
-          [colors.ORANGE] = colors.BLUE,
-          [colors.CYAN] = colors.YELLOW,
-          [colors.VIOLET] = colors.GREEN,
-          [colors.YELLOW] = colors.RED,
-          [colors.DARKBLUE] = colors.VIOLET,
-        }
-        -- Return the opposite color, or fallback to foreground color
-        return opposite_colors[mode_color] or colors.FG
-      end
-
-      -- Function to get an animated color (randomly chosen from available colors)
-      local function get_animated_color(mode_color)
-        -- Define a list of all available colors
-        local all_colors = {
-          colors.RED,
-          colors.BLUE,
-          colors.GREEN,
-          colors.MAGENTA,
-          colors.ORANGE,
-          colors.CYAN,
-          colors.VIOLET,
-          colors.YELLOW,
-          colors.DARKBLUE,
-        }
-        -- Create a list of possible opposite colors (excluding the current mode color)
-        local possible_opposites = {}
-        for _, color in ipairs(all_colors) do
-          if color ~= mode_color then
-            table.insert(possible_opposites, color)
-          end
-        end
-        -- Randomly select an opposite color
-        if #possible_opposites > 0 then
-          local random_index = math.random(1, #possible_opposites)
-          return possible_opposites[random_index]
-        else
-          return colors.FG -- Default to foreground color if no opposite found
-        end
-      end
-
-      -- Function to interpolate between two colors for a smooth transition
-      local function interpolate_color(color1, color2, step)
-        -- Blend two colors based on the given step factor (0.0 -> color1, 1.0 -> color2)
-        local blend = function(c1, c2, stp)
-          return math.floor(c1 + (c2 - c1) * stp)
-        end
-        -- Extract the RGB values of both colors (in hex)
-        local r1, g1, b1 = tonumber(color1:sub(2, 3), 16), tonumber(color1:sub(4, 5), 16), tonumber(color1:sub(6, 7), 16)
-        local r2, g2, b2 = tonumber(color2:sub(2, 3), 16), tonumber(color2:sub(4, 5), 16), tonumber(color2:sub(6, 7), 16)
-
-        -- Calculate the new RGB values for the blended color
-        local r = blend(r1, r2, step)
-        local g = blend(g1, g2, step)
-        local b = blend(b1, b2, step)
-
-        -- Return the blended color in hex format
-        return string.format('#%02X%02X%02X', r, g, b)
-      end
-
-      -- Function to get a middle color by interpolating between mode color and its opposite
-      local function get_middle_color(color_step)
-        -- Set default value for color_step if not provided
-        color_step = color_step or 0.5 -- If color_step is nil, default to 0.5
-
-        local color1 = get_mode_color() -- Get the current mode color
-        local color2 = get_opposite_color(color1) -- Get the opposite color
-
-        -- Return an interpolated color between the two (based on the color_step value)
-        return interpolate_color(color1, color2, color_step)
       end
 
       -- Condition: Check if the buffer is not empty
@@ -191,10 +132,6 @@ return {
         crosses = { '☨', '✟', '♰', '♱', '⛨', '' }, -- Set of cross-like symbols
       }
 
-      -- Function to select a random icon from a given set
-      local function get_random_icon(icons)
-        return icons[math.random(#icons)] -- Returns a random icon from the set
-      end
 
       -- Function to shuffle the elements in a table
       local function shuffle_table(tbl)
@@ -213,27 +150,16 @@ return {
       end
       shuffle_table(icon_sets_list) -- Shuffle the icon sets list
 
-      -- Function to reverse the order of elements in a table
-      local function reverse_table(tbl)
-        local reversed = {}
-        for i = #tbl, 1, -1 do
-          table.insert(reversed, tbl[i]) -- Insert elements in reverse order
-        end
-        return reversed
-      end
-
-      -- Create a reversed list of icon sets
-      local reversed_icon_sets = reverse_table(icon_sets_list)
-
       -- Function to create a separator component based on side (left/right) and optional mode color
-      local function create_separator(side, use_mode_color)
+      local function create_separator(side, cust_color, use_mode_color)
         return {
           function()
             return side == 'left' and '' or '' -- Choose separator symbol based on side
           end,
           color = function()
             -- Set color based on mode or opposite color
-            local color = use_mode_color and get_mode_color() or get_opposite_color(get_mode_color())
+            local mode_color = get_mode_color()
+            local color = use_mode_color and mode_color or cust_color
             return {
               fg = color,
             }
@@ -252,10 +178,9 @@ return {
           icon = icon,
           color = function()
             local mode_color = get_mode_color()
-            local opposite_color = get_opposite_color(mode_color)
             return {
               fg = color_fg or colors.FG,
-              bg = color_bg or opposite_color,
+              bg = color_bg or mode_color,
               gui = 'bold',
             }
           end,
@@ -378,7 +303,7 @@ return {
         padding = { left = 1, right = 1 },
       }
 
-      ins_left(create_separator('left', true))
+      ins_left(create_separator('left', seperator_color, true))
 
       ins_left {
         function()
@@ -389,23 +314,23 @@ return {
           local virtual_env = vim.env.VIRTUAL_ENV
           if virtual_env then
             return {
-              fg = get_mode_color(),
+              fg = colors.GREEN,
               gui = 'bold,strikethrough',
             }
           else
             return {
-              fg = get_mode_color(),
+              fg = colors.GREEN,
               gui = 'bold',
             }
           end
         end,
       }
 
-      ins_left(create_separator('right'))
+      ins_left(create_separator('right', seperator_color))
 
-      ins_left(create_mode_based_component('filename', nil, colors.BG))
+      ins_left(create_mode_based_component('filename', nil, colors.BG, colors.FG))
 
-      ins_left(create_separator('left'))
+      ins_left(create_separator('left', seperator_color))
 
       ins_left {
         function()
@@ -413,7 +338,7 @@ return {
         end,
         color = function()
           return {
-            fg = colors.FG,
+            fg = colors.PURPLE,
           }
         end,
         cond = hide_in_width,
@@ -423,31 +348,113 @@ return {
         function()
           local git_status = vim.b.gitsigns_status_dict
           if git_status then
-            return string.format('+%d ~%d -%d', git_status.added or 0, git_status.changed or 0, git_status.removed or 0)
+            return '󰊢'
           end
           return ''
         end,
-          icon = '󰊢 ',
         color = {
-          fg = colors.BLUE,
+          fg = colors.CYAN,
           gui = 'bold',
         },
         cond = hide_in_width,
       }
 
-      for _, icons in pairs(icon_sets_list) do
-        ins_left {
-          function()
-            return get_random_icon(icons)
-          end,
-          color = function()
-            return {
-              fg = get_animated_color(),
-            }
-          end,
-          cond = hide_in_width,
-        }
-      end
+      ins_left {
+        function()
+          local git_status = vim.b.gitsigns_status_dict
+          if git_status then
+            return string.format('+%d', git_status.added or 0)
+          end
+          return ''
+        end,
+        color = {
+          fg = colors.GITADD,
+          gui = 'bold',
+        },
+        cond = hide_in_width,
+      }
+
+      ins_left {
+        function()
+          local git_status = vim.b.gitsigns_status_dict
+          if git_status then
+            return string.format('~%d', git_status.changed or 0)
+          end
+          return ''
+        end,
+        color = {
+          fg = colors.GITCHANGE,
+          gui = 'bold',
+        },
+        cond = hide_in_width,
+      }
+
+      ins_left {
+        function()
+          local git_status = vim.b.gitsigns_status_dict
+          if git_status then
+            return string.format('-%d', git_status.removed or 0)
+          end
+          return ''
+        end,
+        color = {
+          fg = colors.GITDELETE,
+          gui = 'bold',
+        },
+        cond = hide_in_width,
+      }
+
+
+
+      ins_left {
+        function()
+          return left_icon_1[1]
+        end,
+        color = function()
+          return { fg = left_icon_1[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_left {
+        function()
+          return left_icon_2[1]
+        end,
+        color = function()
+          return { fg = left_icon_2[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_left {
+        function()
+          return left_icon_3[1]
+        end,
+        color = function()
+          return { fg = left_icon_3[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_left {
+        function()
+          return left_icon_4[1]
+        end,
+        color = function()
+          return { fg = left_icon_4[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_left {
+        function()
+          return left_icon_5[1]
+        end,
+        color = function()
+          return { fg = left_icon_5[2] }
+        end,
+        cond = hide_in_width,
+      }
 
       ins_left {
         'searchcount',
@@ -480,19 +487,64 @@ return {
         },
       }
 
-      for _, icons in ipairs(reversed_icon_sets) do
-        ins_right {
-          function()
-            return get_random_icon(icons)
-          end,
-          color = function()
-            return {
-              fg = get_animated_color(),
-            }
-          end,
-          cond = hide_in_width,
-        }
-      end
+      ins_right {
+        function()
+          return right_icon_1[1]
+        end,
+        color = function()
+          return { fg = right_icon_1[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_right {
+        function()
+          return right_icon_2[1]
+        end,
+        color = function()
+          return { fg = right_icon_2[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_right {
+        function()
+          return right_icon_3[1]
+        end,
+        color = function()
+          return { fg = right_icon_3[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_right {
+        function()
+          return right_icon_4[1]
+        end,
+        color = function()
+          return { fg = right_icon_4[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_right {
+        function()
+          return right_icon_5[1]
+        end,
+        color = function()
+          return { fg = right_icon_5[2] }
+        end,
+        cond = hide_in_width,
+      }
+
+      ins_left {
+        'searchcount',
+        color = {
+          fg = colors.GREEN,
+          gui = 'bold',
+        },
+      }
+
 
       ins_right {
         function()
@@ -527,7 +579,7 @@ return {
         end,
         icon = ' ',
         color = {
-          fg = colors.SEAFOAM,
+          fg = colors.CYAN,
           gui = 'bold',
         },
       }
@@ -537,16 +589,16 @@ return {
           return ''
         end,
         color = function()
-          return { fg = colors.FG }
+          return { fg = colors.PURPLE }
         end,
         cond = hide_in_width,
       }
 
-      ins_right(create_separator('right'))
+      ins_right(create_separator('right', cursor_place_color))
 
-      ins_right(create_mode_based_component('location', nil, colors.BG))
+      ins_right(create_mode_based_component('location', nil, colors.BG, cursor_place_color))
 
-      ins_right(create_separator('left'))
+      ins_right(create_separator('left', cursor_place_color))
 
       ins_right {
         'branch',
@@ -610,20 +662,18 @@ return {
           return truncated_branch
         end,
         color = function()
-          local mode_color = get_mode_color()
           return {
-            fg = mode_color,
+            fg = colors.GREEN,
             gui = 'bold',
           }
         end,
       }
 
-      ins_right(create_separator('right'))
+      ins_right(create_separator('right', seperator_color))
 
-      ins_right(create_mode_based_component('progress', nil, colors.BG))
+      ins_right(create_mode_based_component('progress', nil, colors.BG, colors.FG ))
 
       require('lualine').setup(config)
-    
 
     end,
   }
