@@ -60,6 +60,7 @@ require('lazy').setup({
   require 'custom.plugins.2077',
   require 'kickstart.plugins.neo-tree',
   require 'custom.plugins.snacks',
+  require 'custom.plugins.milli',
 
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
