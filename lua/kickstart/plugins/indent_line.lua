@@ -10,4 +10,7 @@ return {
   ---@module 'ibl'
   ---@type ibl.config
   opts = {},
+  config = function()
+    require('ibl').setup()
+  end,
 }
