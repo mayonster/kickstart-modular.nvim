@@ -61,6 +61,7 @@ require('lazy').setup({
   require 'kickstart.plugins.neo-tree',
   require 'custom.plugins.snacks',
   --require 'custom.plugins.milli',
+  require 'custom.plugins.rainbowDelimiters',
 
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
